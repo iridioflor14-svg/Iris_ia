@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import math
@@ -287,3 +288,4 @@ if st.button("Analisar Sentimento e Criar Mídia"):
             st.markdown(parte)
             
         st.success("✅ A IA Iris demonstrou todo seu potencial de ML!")
+txt.streamlit
