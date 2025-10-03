@@ -17,7 +17,7 @@ st.set_page_config(
 
 # SEU NOVO CÓDIGO AQUI: SUBSTITUA PELA ID DO SEU ARQUIVO!
 # ----------------------------------------------------------------
-DRIVE_FILE_ID = '1IQVWxgC7nAvRYiojyFsVIf0zN2vXWmKV' # ID DO ARQUIVO .h5 NO GOOGLE DRIVE
+DRIVE_FILE_ID = '1TIdt1JJKTgahIsno9V3BkKcYQgKDzQ0e' # NOVO ID DO ARQUIVO .h5 NO GOOGLE DRIVE
 # ----------------------------------------------------------------
 
 # Nomes dos arquivos de Deep Learning
@@ -100,7 +100,6 @@ def analisar_sentimento_real(frase, modelo, tokenizer):
     # Se o tokenizer de emergência for carregado, a sequência pode ser vazia,
     # então usamos um pequeno check para evitar falhas.
     if not sequence or not sequence[0]:
-        # Tenta ajustar o comprimento da sequência mesmo com tokenizer básico.
         st.warning("Aviso: O tokenizer básico não conseguiu mapear a frase.")
     
     padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(
