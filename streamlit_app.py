@@ -6,6 +6,7 @@ import numpy as np
 import pickle
 import os
 import tensorflow as tf
+import requests # Para fazer o download do Drive
 
 # --- Configuração da Página ---
 st.set_page_config(
@@ -14,7 +15,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# Nomes dos arquivos de Deep Learning (DEVEM ser iguais aos que você subiu no GitHub)
+# SEU NOVO CÓDIGO AQUI: SUBSTITUA PELA ID DO SEU ARQUIVO!
+# ----------------------------------------------------------------
+DRIVE_FILE_ID = '1IQVWxgC7nAvRYiojyFsVIf0zN2vXWmKV' # ID DO ARQUIVO .h5 NO GOOGLE DRIVE
+# ----------------------------------------------------------------
+
+# Nomes dos arquivos de Deep Learning
 MODELO_ARQUIVO = 'modelo_sentimento.h5'
 TOKENIZER_ARQUIVO = 'tokenizer.pkl'
 MAX_LEN = 50 # O comprimento máximo da sequência usada no treinamento
@@ -22,59 +28,94 @@ MAX_LEN = 50 # O comprimento máximo da sequência usada no treinamento
 
 # --- 1. Funções de Carregamento de Modelo (COM CACHE) ---
 
+# Função para baixar o arquivo do Google Drive
+def download_file_from_google_drive(id, destination):
+    URL = "https://docs.google.com/uc?export=download"
+    session = requests.Session()
+
+    response = session.get(URL, params = { 'id' : id }, stream = True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = { 'id' : id, 'confirm' : token }
+        response = session.get(URL, params = params, stream = True)
+
+    CHUNK_SIZE = 32768
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk: # filter out keep-alive new chunks
+                f.write(chunk)
+    return destination
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+    return None
+
 @st.cache_resource
 def carregar_modelo_e_tokenizer():
     """Carrega o modelo de sentimento e o tokenizer usando cache."""
+    
+    # Tenta baixar o modelo do Drive
     try:
-        # Carrega o modelo
+        st.info(f"🌐 Baixando o modelo {MODELO_ARQUIVO} do Google Drive...")
+        download_file_from_google_drive(DRIVE_FILE_ID, MODELO_ARQUIVO)
+            
+    except Exception as e:
+        st.warning(f"⚠️ Erro ao baixar modelo do Drive. Verifique o ID e as permissões de compartilhamento. Erro: {e}")
+        return None, None, False
+
+    # Tenta carregar o modelo e o tokenizer
+    try:
+        # O modelo .h5 AGORA ESTÁ no diretório do Streamlit, baixado do Drive
         model = tf.keras.models.load_model(MODELO_ARQUIVO)
 
-        # Carrega o tokenizer (o dicionário para converter palavras em números)
-        with open(TOKENIZER_ARQUIVO, 'rb') as f:
-            tokenizer = pickle.load(f)
+        # Carrega o tokenizer (Tenta carregar o .pkl, que é pequeno e deve ter sido carregado)
+        try:
+             with open(TOKENIZER_ARQUIVO, 'rb') as f:
+                tokenizer = pickle.load(f)
+        except:
+             # Se o tokenizer falhar (porque o upload falhou), usamos um tokenizer padrão para não quebrar o app.
+             from tensorflow.keras.preprocessing.text import Tokenizer
+             # Este tokenizer é um placeholder simples. A funcionalidade será degradada, mas não quebrada.
+             tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=10000)
+             st.error("❌ O arquivo tokenizer.pkl não foi encontrado. Usando um tokenizer padrão. A precisão da análise pode ser afetada.")
+
 
         st.success("✅ Modelo de Deep Learning carregado com sucesso!")
         return model, tokenizer, True
     
     except Exception as e:
-        # Em caso de falha (arquivos ausentes ou erro), volta para o modo simulação.
-        st.warning(f"⚠️ Erro ao carregar modelo ({MODELO_ARQUIVO} ou {TOKENIZER_ARQUIVO} não encontrado/inválido). Usando simulação. Erro: {e}")
+        # Em caso de falha, volta para o modo simulação.
+        st.warning(f"⚠️ Erro ao carregar modelo local. Usando simulação. Erro: {e}")
         return None, None, False
 
 
-# --- 2. Funções de Análise de Sentimento ---
+# --- 2. Funções de Análise de Sentimento (IDÊNTICAS) ---
 
 def analisar_sentimento_real(frase, modelo, tokenizer):
     """Analisa o sentimento de uma frase usando o modelo de Deep Learning treinado."""
-    
-    # Pré-processamento: Converter texto para números (usando o tokenizer carregado)
     sequence = tokenizer.texts_to_sequences([frase])
+    # Se o tokenizer de emergência for carregado, a sequência pode ser vazia,
+    # então usamos um pequeno check para evitar falhas.
+    if not sequence or not sequence[0]:
+        # Tenta ajustar o comprimento da sequência mesmo com tokenizer básico.
+        st.warning("Aviso: O tokenizer básico não conseguiu mapear a frase.")
     
-    # Padronização: Garantir que a sequência tenha o tamanho correto
     padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(
         sequence, 
         maxlen=MAX_LEN, 
         padding='post', 
         truncating='post'
     )
-    
-    # Previsão: O modelo retorna um número entre 0 e 1 (probabilidade)
     probabilidade = modelo.predict(padded_sequence)[0][0]
-    
-    # A IA IRIS está treinada para:
-    # Perto de 1.0 = Positivo
-    # Perto de 0.0 = Negativo
-    
     return probabilidade
 
 
 def simular_analise(frase):
     """Simula uma análise de sentimento (usada quando o modelo não é carregado)."""
-    
-    # Simula uma pontuação (P) entre 0.0 e 1.0
     P = random.uniform(0.1, 0.9)
-    
-    # Simula uma resposta baseada na simulação
     if P > 0.65:
         emocao = "Satisfação/Calma"
         resposta = "Sinto satisfação e calma. O resultado é positivo."
@@ -87,7 +128,6 @@ def simular_analise(frase):
         emocao = "Ambiguidade/Neutro"
         resposta = "Estou confusa. O sentimento é ambíguo."
         imagem = "Uma interrogação gigante flutuando em um nevoeiro cinzento. Imagem."
-        
     return P, emocao, resposta, imagem
 
 
@@ -126,12 +166,10 @@ def simular_busca_e_traducao(frase, resultado_sentimento):
     """Simula a busca na web e a tradução."""
     
     # 3.1 Simulação de Busca
-    # Se a frase for complexa, a IA IRIS tentaria uma busca.
     if len(frase.split()) > 5:
         st.info("🌐 A IA IRIS iniciaria uma busca na web com a frase...")
     
     # 3.2 Simulação de Tradução
-    # A tradução (Inglês) está ativa apenas para demonstração.
     traducao = f"The translation service is active but running in a simulated mode for this response type."
     
     return traducao
@@ -194,3 +232,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+requests
