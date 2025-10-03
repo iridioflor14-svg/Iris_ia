@@ -1,5 +1,6 @@
 streamlit
-tensorflow-cpu  # Mudamos de 'tensorflow' para 'tensorflow-cpu'
+tensorflow
+tensorflow-cpu
 numpy
 pickle
 requests
