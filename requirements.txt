@@ -1,3 +1,2 @@
-.requirements.txt
+requirements.txt
 streamlit
-random
