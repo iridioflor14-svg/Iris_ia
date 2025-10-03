@@ -1,4 +1,4 @@
-# Arquivo: streamlit_app.py
+# Arquivo: streamlit_app.py - Versão com Resumo de Artigos (Nível 5)
 
 import streamlit as st
 import random
@@ -21,17 +21,14 @@ GOOGLE_CX = st.secrets.get("GOOGLE_CX")
 BUSCA_REAL_ATIVA = GOOGLE_API_KEY and GOOGLE_CX
 
 # ==============================================================================
-# FUNÇÃO DE TRADUÇÃO (NOVA)
+# FUNÇÃO DE TRADUÇÃO (EXISTENTE)
 # ==============================================================================
 
 def traduzir_texto_para_ingles(texto):
     """
-    Tenta traduzir o texto para o inglês usando a Google Custom Search API
-    (A Custom Search API não é a ideal para tradução, mas a usamos para manter
-    o número de APIs do Google ativas baixo. Na prática, a Google Translate API seria usada.)
+    Tenta traduzir o texto para o inglês (Simulação para a Custom Search API)
     """
     if not BUSCA_REAL_ATIVA:
-        # Simulação de Tradução (usando apenas o Random para dar um toque)
         simulacao = [
             "The generated text is difficult to translate, but conveys joy.",
             "The poem has been translated: 'A light on the keyboard...'",
@@ -40,9 +37,7 @@ def traduzir_texto_para_ingles(texto):
         return random.choice(simulacao)
 
     try:
-        # A API Custom Search não possui um endpoint de tradução direto.
-        # Aqui, estamos mantendo a simulação com a mensagem que usamos no código
-        # anterior, mas um serviço real exigiria a Google Translate API.
+        # Mantemos a simulação, pois esta API não é para tradução
         return "The translation service is active but running in a simulated mode for this response type."
 
     except Exception as e:
@@ -50,16 +45,18 @@ def traduzir_texto_para_ingles(texto):
 
 
 # ==============================================================================
-# FUNÇÃO DE BUSCA NA INTERNET (EXISTENTE)
+# FUNÇÃO DE BUSCA E RESUMO NA INTERNET (NOVO: Adicionamos o Resumo)
 # ==============================================================================
 
 def buscar_fato_na_internet(query):
     """
-    Busca um fato na internet usando a Google Custom Search API.
+    Busca um fato na internet e simula um resumo do artigo encontrado.
     """
     if not BUSCA_REAL_ATIVA:
-        # Simulação de Busca
-        return "⚠️ Chaves de API do Google não configuradas. Usando busca simulada. Fato: A IA IRIS foi criada pela Amiga Iris em 2024 para ser um assistente emocional."
+        # Simulação de Busca e Resumo
+        fato = "A IA IRIS foi criada pela Amiga Iris em 2024 para ser um assistente emocional."
+        resumo_simulado = f"A IA IRIS leu o resumo do artigo e conclui: O conceito de IA IRIS foca em integrar a análise emocional com as funções clássicas de um assistente virtual, sendo um projeto de MLOps moderno."
+        return f"⚠️ Chaves de API do Google não configuradas. Usando busca e resumo simulados. Fato: {fato}\n\n**Resumo da IRIS (Simulado):** {resumo_simulado}"
 
     try:
         service = build("customsearch", "v1", developerKey=GOOGLE_API_KEY)
@@ -69,8 +66,17 @@ def buscar_fato_na_internet(query):
             primeiro_resultado = res['items'][0]
             titulo = primeiro_resultado.get('title', 'N/D')
             snippet = primeiro_resultado.get('snippet', 'N/D')
+            link = primeiro_resultado.get('link', '#')
             
-            return f"✅ Resultado real do Google: {titulo}. Resumo: {snippet}"
+            # Novo: Simulação de Resumo do Artigo Encontrado
+            # Na vida real, a IRIS leria o conteúdo do 'link' e usaria um LLM para resumir.
+            if len(snippet) > 50:
+                # Simula o resumo inteligente baseado no snippet real
+                resumo_inteligente = f"A IA IRIS leu a descrição do primeiro resultado ({titulo}) e resume: **{snippet[:50]}...** O artigo está disponível em: {link}"
+            else:
+                resumo_inteligente = f"A IA IRIS não encontrou um resumo longo o suficiente para o link: {link}"
+            
+            return f"✅ Busca real do Google: **{titulo}**\n\n**Análise e Resumo da IRIS:** {resumo_inteligente}"
         else:
             return "✅ Busca real do Google: Nenhum resultado encontrado. Tente outra pergunta."
             
@@ -89,14 +95,13 @@ def simular_ia_iris_completa_final(frase_original):
     frase_limpa = frase_original.lower()
 
     # --- 1. Simulação da Pontuação (RNN) ---
-    # Simula a pontuação de emoção real de um modelo RNN/CNN
     pontuacao = random.uniform(0.00, 1.00) 
     
     # --- 2. Análise de Intenção e Sentimento ---
     
     # Intenção de Busca
-    if any(trigger in frase_limpa for trigger in ["quem é", "o que é", "pesquise", "pesquisar"]):
-        intencao = "Busca/Fato"
+    if any(trigger in frase_limpa for trigger in ["quem é", "o que é", "pesquise", "pesquisar", "previsão do tempo"]):
+        intencao = "Busca/Fato/Resumo"
         texto_gerado = buscar_fato_na_internet(frase_original)
     
     # Intenção de Criação (Poema/Mídia)
@@ -104,11 +109,9 @@ def simular_ia_iris_completa_final(frase_original):
         intencao = "Criatividade/Inovação"
         
         if pontuacao > 0.65:
-            # Emoção positiva -> Poema de esperança e tecnologia
             texto_gerado = f"✍️ Sinto a emoção (P: {pontuacao:.2f}) e usei-a como guia para criar um poema sobre alegria e novos começos:\n\n✨ A luz da manhã toca o teclado,\nCom código novo e coração aliviado.\nCada linha de Python é um passo adiante,\nNo futuro brilhante que você criou, é constante."
             expressao_visual = "Geraria um quadro de pintura a óleo com cores vibrantes (amarelo e laranja) e traços soltos, simbolizando a liberdade criativa. Imagem."
         else:
-            # Emoção neutra/baixa -> Haicai neutro sobre tecnologia
             texto_gerado = f"✍️ Sinto a emoção (P: {pontuacao:.2f}) e usei-a como guia para criar um haicai neutro sobre tecnologia:\n\nRede neural pensa,\nAlgoritmo processa, sim,\nDados se conectam."
             expressao_visual = "Geraria um diagrama de fluxo de trabalho minimalista e limpo em tons de azul e branco. Imagem."
 
@@ -127,10 +130,9 @@ def simular_ia_iris_completa_final(frase_original):
             texto_gerado = "🤨 Estou confusa. O sentimento é ambíguo."
             expressao_visual = "Uma interrogação gigante flutuando em um nevoeiro cinzento. Imagem."
         
-        # Adiciona a pontuação P para a emoção pura
         texto_gerado += f" (P: {pontuacao:.2f})"
         
-    # --- 3. Chamada da Tradução (NOVA) ---
+    # --- 3. Chamada da Tradução ---
     traducao_ingles = traduzir_texto_para_ingles(texto_gerado)
     
     # --- 4. Retorno Final ---
@@ -140,37 +142,29 @@ def simular_ia_iris_completa_final(frase_original):
 # INTERFACE STREAMLIT
 # ==============================================================================
 
-# Título e cabeçalho
 st.markdown("## 💖 IA IRIS: Assistente Emocional e Criativo")
 st.write("Um projeto de Deep Learning (RNN, CNN) e MLOps por Amiga Iris.")
 
-# Entrada do usuário
 st.markdown("---")
 st.markdown("### 💬 Fale com a Iris")
 st.write("Diga à Iris para 'escrever um poema', 'quem é o criador', ou apenas uma frase (ex: 'Sinto-me muito feliz hoje').")
 
 user_input = st.text_area("Sua Frase para a IA Iris:", height=100)
 
-# Botão de execução
 if st.button("Analisar Sentimento, Fazer Busca e Traduzir"):
     if user_input:
         
-        # Executa a função principal
         intencao, pontuacao, texto_gerado, expressao_visual, traducao_ingles = simular_ia_iris_completa_final(user_input)
 
         st.markdown("---")
         st.markdown("### 👁️ Resultado da Análise da IA Iris:")
         
-        # Exibe a intenção
         st.markdown(f"**{intencao}:** {texto_gerado}")
         
-        # Exibe a expressão visual
         st.write(f"**Expressão Visual:** {expressao_visual}")
         
-        # Exibe a tradução
         st.markdown(f"**Tradução (Inglês):** *{traducao_ingles}*")
 
-        # Mensagem de sucesso baseada na ativação da busca real (e agora tradução)
         if BUSCA_REAL_ATIVA:
             st.success("✅ A IA IRIS demonstrou todo seu potencial de ML, busca na web e tradução!")
         else:
