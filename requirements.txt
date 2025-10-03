@@ -1,7 +1,5 @@
 streamlit
-random
+tensorflow
 numpy
 pickle
-tensorflow
-requests 
-
+requests
