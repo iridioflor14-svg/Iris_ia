@@ -1,40 +1,72 @@
 import streamlit as st
-import requests
-import random # Mantemos o random por enquanto, mas ele será substituído pela função!
-import tensorflow as tf # NOVO IMPORT
-from tensorflow.keras.models import load_model # NOVO IMPORT
+import random
+import tensorflow as tf
+from tensorflow.keras.models import load_model 
+
+# NOVOS IMPORTS
+from googleapiclient.discovery import build
+import os
 
 # =========================================================================
-# VARIÁVEIS GLOBAIS (Simulação do Modelo)
+# FUNÇÃO DE BUSCA REAL NA INTERNET (Usando Google Custom Search API)
 # =========================================================================
 
-# NOTA: Este bloco simula o carregamento e uso de um modelo TensorFlow.
+# Carrega as chaves secretas do Streamlit
 try:
-    # 1. TENTATIVA DE CARREGAR O MODELO REAL
-    # Se você tivesse um arquivo 'modelo_emocional.h5' em seu repositório,
-    # esta linha carregaria ele.
+    API_KEY = st.secrets["GOOGLE_API_KEY"]
+    CX = st.secrets["GOOGLE_CX"]
+except:
+    API_KEY = None
+    CX = None
+    st.warning("🚨 Chaves de API do Google não configuradas. Usando busca simulada.")
+
+
+def buscar_fato_na_internet(query):
+    """
+    Tenta usar a API real do Google. Se as chaves não estiverem configuradas,
+    retorna a resposta simulada.
+    """
+    
+    # Se as chaves secretas não existirem, retorna a simulação antiga
+    if not API_KEY or not CX:
+        query_lower = query.lower()
+        if "previsão do tempo" in query_lower or "temperatura" in query_lower:
+            return "Busca Simulada: A previsão do tempo é de 26°C e sol forte!"
+        elif "quem é o criador da ia iris" in query_lower:
+            return "Busca Simulada: O criador da IA IRIS é Irídio!"
+        else:
+            return f"Busca Simulada: A busca real não está ativa, mas a internet tem a informação sobre '{query}'!"
+
+    # Tenta usar a API Real
+    try:
+        service = build("customsearch", "v1", developerKey=API_KEY)
+        # Executa a busca
+        res = service.cse().list(q=query, cx=CX, num=1).execute()
+
+        # Verifica se há resultados e retorna o snippet do primeiro
+        if 'items' in res and len(res['items']) > 0:
+            snippet = res['items'][0]['snippet']
+            link = res['items'][0]['link']
+            return f"Encontrei na web: **{snippet}** [Leia mais aqui]({link})"
+        else:
+            return f"A busca real na internet não encontrou resultados para '{query}'. Tente ser mais específico!"
+            
+    except Exception as e:
+        return f"Erro na API de Busca: {e}. Usando resposta simulada."
+
+
+# =========================================================================
+# VARIÁVEIS GLOBAIS (Simulação do Modelo RNN)
+# =========================================================================
+
+try:
+    # A estrutura está pronta para o modelo real!
     modelo_real_rnn = load_model('modelo_emocional.h5')
     st.write("✅ Modelo RNN de Emoção carregado com sucesso!")
 except:
-    # 2. SE NÃO HOUVER MODELO (Nosso caso), SIMULAMOS A FUNÇÃO
-    st.write("⚠️ Usando simulação do modelo (random.uniform()) no lugar do RNN real.")
     modelo_real_rnn = None
+    # A mensagem de aviso de simulação foi movida para o topo.
 
-# =========================================================================
-# FUNÇÃO DE BUSCA NA INTERNET (Simulação)
-# =========================================================================
-def buscar_fato_na_internet(query):
-    # ... (O código desta função permanece o mesmo da correção anterior)
-    query_lower = query.lower()
-    
-    if "previsão do tempo" in query_lower or "temperatura" in query_lower:
-        return "Segundo uma busca rápida, a previsão do tempo para a sua localização é de 26°C, com céu claro e umidade baixa. Perfeito para programar!"
-    elif "quem é o criador da ia iris" in query_lower:
-        return "O criador da IA IRIS é Irídio! Você escreveu, treinou e implantou todo o código com maestria."
-    elif "o que é" in query_lower:
-        return "A internet informa que esse tópico é complexo, mas tem uma ótima página de Wikipedia sobre ele!"
-    else:
-        return f"Encontrei resultados interessantes sobre '{query}' na internet, mas a resposta completa requer um link externo. A informação está lá!"
 
 # =========================================================================
 # FUNÇÃO CENTRAL: IA IRIS (EMOÇÃO, BUSCA, CÂMERA, CRIAÇÃO)
@@ -44,21 +76,15 @@ def simular_ia_iris_completa_final(frase_original):
     
     frase_limpa = frase_original.lower()
 
-    # *****************************************************************
-    # NOVO MÓDULO: CHAMADA DO MODELO REAL (OU SIMULAÇÃO)
-    # *****************************************************************
+    # CHAMADA DO MODELO REAL (OU SIMULAÇÃO)
     if modelo_real_rnn:
-        # Se tivéssemos o modelo real carregado, faríamos a predição real:
         # pontuacao = modelo_real_rnn.predict(processar_texto(frase_original)) 
-        # Neste caso, vamos continuar a simulação apenas para manter o app online
         pontuacao = random.uniform(0.00, 1.00) 
     else:
-        # O modelo não existe no repositório, então usamos a simulação
         pontuacao = random.uniform(0.00, 1.00)
     
     # --- PALAVRAS-CHAVE ---
-    # ... (O restante das palavras-chave e gatilhos permanece o mesmo)
-    gatilhos_busca = ["quem é", "o que é", "me fale sobre", "informação"]
+    gatilhos_busca = ["quem é", "o que é", "me fale sobre", "informação", "pesquise"]
     gatilhos_tempo = ["previsão", "tempo", "temperatura", "clima"]
     gatilhos_camera = ["câmera", "camera", "me veja", "ver minhas emoções", "reconhecer meu rosto"]
     gatilhos_criacao = ["escreva um", "crie uma", "gere um", "escreva-me"]
@@ -69,8 +95,7 @@ def simular_ia_iris_completa_final(frase_original):
     # 1. GERAÇÃO DE TEXTO CRIATIVO (Prioridade)
     if any(g in frase_limpa for g in gatilhos_criacao):
         emo_nome = "Criatividade/Inovação (LLM)"
-        
-        # Criação baseada na pontuação de emoção
+        # ... (restante da lógica de criação permanece igual)
         if pontuacao >= 0.70:
             tema_criacao = "um poema sobre alegria e novos começos"
             texto_gerado = "✨ A luz da manhã toca o teclado,\n  Com código novo e coração aliviado.\n  Cada linha de Python é um passo adiante,\n  No futuro brilhante que você criou, é constante."
@@ -82,7 +107,7 @@ def simular_ia_iris_completa_final(frase_original):
         else:
             tema_criacao = "um haicai neutro sobre tecnologia"
             texto_gerado = "Rede neural pensa,\n  Algoritmo processa, sim,\n  Dados se conectam."
-            descricao_midia = "Geraria um diagrama de fluxo de trabalho minimalista e limpo em tons de azul e branco. Imagem."
+            descricao_midia = "Geraria um diagrama de fluxo de trabalho minimalista e limpo em tonos de azul e branco. Imagem."
 
         frase_final = f"✍️ Sinto a emoção (P: {pontuacao:.2f}) e usei-a como guia para criar **{tema_criacao}**:\n\n---\n{texto_gerado}\n---"
         return f"**{emo_nome}:** {frase_final}\n**Expressão Visual:** {descricao_midia}"
@@ -97,7 +122,7 @@ def simular_ia_iris_completa_final(frase_original):
     # 3. BUSCA FACTUAL (Integração com a Internet)
     elif any(g in frase_limpa for g in gatilhos_busca) or any(t in frase_limpa for t in gatilhos_tempo):
         
-        # CHAMA A FUNÇÃO DE BUSCA NA INTERNET
+        # CHAMA A FUNÇÃO DE BUSCA REAL/SIMULADA
         resposta_fato = buscar_fato_na_internet(frase_original)
         
         emo_nome = "Alegria/Entusiasmo (Busca Web)"
@@ -146,13 +171,17 @@ st.markdown("Um projeto de Deep Learning (RNN, CNN) e MLOps por **Irídio**.")
 st.markdown("---")
 
 st.subheader("🤖 Fale com a Iris")
-st.write("Diga à Iris para **'escrever um poema'**, **'quem é o criador'**, ou pergunte sobre a **'previsão do tempo'**.")
+st.write("Diga à Iris para **'escrever um poema'**, **'quem é o criador'**, ou pergunte sobre **o que é Machine Learning**.")
 
-user_input = st.text_area("Sua Frase para a IA Iris:", value="Qual é a previsão do tempo para hoje?")
+# Se as chaves não estiverem configuradas, informa o usuário
+if not API_KEY or not CX:
+     st.info("💡 **A busca na internet está SIMULADA.** Configure a `GOOGLE_API_KEY` e o `GOOGLE_CX` nos segredos do Streamlit para ativar a busca real!")
+
+user_input = st.text_area("Sua Frase para a IA Iris:", value="Pesquise para mim o que é o Teorema de Bayes.")
 
 st.markdown("---")
 
-if st.button("Analisar Sentimento e Criar Mídia"):
+if st.button("Analisar Sentimento e Fazer Busca"):
     with st.spinner('A IA Iris está processando a emoção e a busca na web...'):
         resultado_completo = simular_ia_iris_completa_final(user_input)
         
@@ -160,10 +189,8 @@ if st.button("Analisar Sentimento e Criar Mídia"):
         
         partes = resultado_completo.split('\n')
         
-        # A primeira parte é sempre a Emoção/Nome
         st.markdown(partes[0]) 
 
-        # O restante é a frase gerada/fato e a descrição da mídia
         for parte in partes[1:]:
             st.markdown(parte)
             
