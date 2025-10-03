@@ -1,19 +1,32 @@
 import streamlit as st
-import random
-import requests # Módulo para simular a busca na internet
+import requests
+import random # Mantemos o random por enquanto, mas ele será substituído pela função!
+import tensorflow as tf # NOVO IMPORT
+from tensorflow.keras.models import load_model # NOVO IMPORT
 
 # =========================================================================
-# FUNÇÃO DE BUSCA REAL NA INTERNET (Simulação)
+# VARIÁVEIS GLOBAIS (Simulação do Modelo)
+# =========================================================================
+
+# NOTA: Este bloco simula o carregamento e uso de um modelo TensorFlow.
+try:
+    # 1. TENTATIVA DE CARREGAR O MODELO REAL
+    # Se você tivesse um arquivo 'modelo_emocional.h5' em seu repositório,
+    # esta linha carregaria ele.
+    modelo_real_rnn = load_model('modelo_emocional.h5')
+    st.write("✅ Modelo RNN de Emoção carregado com sucesso!")
+except:
+    # 2. SE NÃO HOUVER MODELO (Nosso caso), SIMULAMOS A FUNÇÃO
+    st.write("⚠️ Usando simulação do modelo (random.uniform()) no lugar do RNN real.")
+    modelo_real_rnn = None
+
+# =========================================================================
+# FUNÇÃO DE BUSCA NA INTERNET (Simulação)
 # =========================================================================
 def buscar_fato_na_internet(query):
-    """
-    Simula uma chamada à API de busca na internet (como Google Custom Search API).
-    A biblioteca 'requests' seria usada aqui para obter dados reais.
-    """
-    
+    # ... (O código desta função permanece o mesmo da correção anterior)
     query_lower = query.lower()
     
-    # Respostas condicionais simuladas para busca
     if "previsão do tempo" in query_lower or "temperatura" in query_lower:
         return "Segundo uma busca rápida, a previsão do tempo para a sua localização é de 26°C, com céu claro e umidade baixa. Perfeito para programar!"
     elif "quem é o criador da ia iris" in query_lower:
@@ -21,7 +34,6 @@ def buscar_fato_na_internet(query):
     elif "o que é" in query_lower:
         return "A internet informa que esse tópico é complexo, mas tem uma ótima página de Wikipedia sobre ele!"
     else:
-        # Resposta padrão para outros tipos de busca
         return f"Encontrei resultados interessantes sobre '{query}' na internet, mas a resposta completa requer um link externo. A informação está lá!"
 
 # =========================================================================
@@ -29,22 +41,30 @@ def buscar_fato_na_internet(query):
 # =========================================================================
 
 def simular_ia_iris_completa_final(frase_original):
-    """
-    Simulação completa da lógica de Deep Learning da IA Iris.
-    """
     
     frase_limpa = frase_original.lower()
-    
-    # Simulação da pontuação do modelo de sentimento (RNN)
-    pontuacao = random.uniform(0.00, 1.00) 
+
+    # *****************************************************************
+    # NOVO MÓDULO: CHAMADA DO MODELO REAL (OU SIMULAÇÃO)
+    # *****************************************************************
+    if modelo_real_rnn:
+        # Se tivéssemos o modelo real carregado, faríamos a predição real:
+        # pontuacao = modelo_real_rnn.predict(processar_texto(frase_original)) 
+        # Neste caso, vamos continuar a simulação apenas para manter o app online
+        pontuacao = random.uniform(0.00, 1.00) 
+    else:
+        # O modelo não existe no repositório, então usamos a simulação
+        pontuacao = random.uniform(0.00, 1.00)
     
     # --- PALAVRAS-CHAVE ---
+    # ... (O restante das palavras-chave e gatilhos permanece o mesmo)
     gatilhos_busca = ["quem é", "o que é", "me fale sobre", "informação"]
     gatilhos_tempo = ["previsão", "tempo", "temperatura", "clima"]
     gatilhos_camera = ["câmera", "camera", "me veja", "ver minhas emoções", "reconhecer meu rosto"]
     gatilhos_criacao = ["escreva um", "crie uma", "gere um", "escreva-me"]
     palavras_saudade = ["sinto falta", "longe", "lembro", "passado"]
     palavras_futuro = ["amanhã", "futuro", "espero", "será"]
+
 
     # 1. GERAÇÃO DE TEXTO CRIATIVO (Prioridade)
     if any(g in frase_limpa for g in gatilhos_criacao):
